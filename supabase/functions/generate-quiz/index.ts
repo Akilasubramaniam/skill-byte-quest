@@ -19,18 +19,24 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are a Python programming quiz generator. Generate exactly 10 multiple-choice questions for ${difficulty} level.
-Each question should have 4 options (A, B, C, D) with exactly one correct answer.
-Return ONLY valid JSON with this exact structure:
+
+CRITICAL RULES:
+- Return ONLY raw JSON, no markdown code blocks
+- Do NOT wrap response in \`\`\`json or \`\`\`
+- Do NOT add any explanations or comments
+- Each question must have exactly 4 options
+- correctAnswer must be an index (0-3)
+
+Response format:
 {
   "questions": [
     {
-      "question": "Question text here?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "question": "Question text?",
+      "options": ["A", "B", "C", "D"],
       "correctAnswer": 0
     }
   ]
-}
-correctAnswer should be the index (0-3) of the correct option.`;
+}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -57,14 +63,27 @@ correctAnswer should be the index (0-3) of the correct option.`;
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    let content = data.choices[0].message.content;
+    
+    // Strip markdown code blocks if present
+    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
     
     // Parse the JSON response
     let quizData;
     try {
       quizData = JSON.parse(content);
+      
+      // Validate the structure
+      if (!quizData.questions || !Array.isArray(quizData.questions) || quizData.questions.length === 0) {
+        console.error("Invalid quiz structure:", content);
+        return new Response(
+          JSON.stringify({ error: "Invalid quiz structure" }), 
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     } catch (e) {
       console.error("Failed to parse AI response:", content);
+      console.error("Parse error:", e);
       return new Response(
         JSON.stringify({ error: "Invalid response format" }), 
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
