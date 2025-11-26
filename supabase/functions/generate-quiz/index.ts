@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const { difficulty = 'beginner' } = await req.json();
-    const GEMINI_API_KEY = "AIzaSyDr7rJon2Ksd_pw3SZXyxI7r9Tyo_LrvDs";
+    const DEEPSEEK_API_KEY = "sk-eb3d917a4bee4fcea7122bc0037cc6ea";
 
     const prompt = `You are a Python programming quiz generator. Generate exactly 10 multiple-choice questions for ${difficulty} level.
 
@@ -36,23 +36,22 @@ Response format:
 
 Generate 10 ${difficulty} level Python programming questions.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        }
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2048,
       }),
     });
 
@@ -66,7 +65,7 @@ Generate 10 ${difficulty} level Python programming questions.`;
     }
 
     const data = await response.json();
-    let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let content = data.choices?.[0]?.message?.content || '';
     
     // Strip markdown code blocks if present
     content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
