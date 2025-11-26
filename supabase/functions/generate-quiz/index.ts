@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const { difficulty = 'beginner' } = await req.json();
-    const DEEPSEEK_API_KEY = "sk-eb3d917a4bee4fcea7122bc0037cc6ea";
+    const DEEPSEEK_API_KEY = "sk-30eb951112694293b70031a188f70dfa";
 
     const prompt = `You are a Python programming quiz generator. Generate exactly 10 multiple-choice questions for ${difficulty} level.
 
