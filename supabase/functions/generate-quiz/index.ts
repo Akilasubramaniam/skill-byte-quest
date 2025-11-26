@@ -12,13 +12,13 @@ serve(async (req) => {
 
   try {
     const { difficulty = 'beginner' } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a Python programming quiz generator. Generate exactly 10 multiple-choice questions for ${difficulty} level.
+    const prompt = `You are a Python programming quiz generator. Generate exactly 10 multiple-choice questions for ${difficulty} level.
 
 CRITICAL RULES:
 - Return ONLY raw JSON, no markdown code blocks
@@ -36,20 +36,27 @@ Response format:
       "correctAnswer": 0
     }
   ]
-}`;
+}
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+Generate 10 ${difficulty} level Python programming questions.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate 10 ${difficulty} level Python programming questions.` }
-        ],
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        }
       }),
     });
 
@@ -63,7 +70,7 @@ Response format:
     }
 
     const data = await response.json();
-    let content = data.choices[0].message.content;
+    let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Strip markdown code blocks if present
     content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
