@@ -12,11 +12,7 @@ serve(async (req) => {
 
   try {
     const { difficulty = 'beginner' } = await req.json();
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured");
-    }
+    const GEMINI_API_KEY = "AIzaSyDr7rJon2Ksd_pw3SZXyxI7r9Tyo_LrvDs";
 
     const prompt = `You are a Python programming quiz generator. Generate exactly 10 multiple-choice questions for ${difficulty} level.
 
